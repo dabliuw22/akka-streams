@@ -13,9 +13,9 @@ object ComplexMainGraph extends App {
   implicit val materializer = ActorMaterializer()
   val logger = Logger(LoggerFactory.getLogger("ComplexMainGraph"))
 
-  val s1 = Source.single(1)
-  val s2 = Source.single(3)
-  val s3 = Source.single(2)
+  val publisher1 = Source.single(1)
+  val publisher2 = Source.single(3)
+  val publisher3 = Source.single(2)
   val subscriber = Sink.foreach[Int] { i => logger.info(s"$i") }
 
   val partialGraph = GraphDSL.create() { implicit build =>
@@ -28,15 +28,17 @@ object ComplexMainGraph extends App {
     UniformFanInShape(z2.out, z1.in0, z1.in1, z2.in1)
   }
 
-  val graph = RunnableGraph.fromGraph(GraphDSL.create() { implicit build =>
+  val graph = RunnableGraph.fromGraph(GraphDSL.create(subscriber) { implicit build => sink =>
     import GraphDSL.Implicits._
     // use partialGraph
     val partial = build.add(partialGraph)
-    s1 ~> partial.in(0)
-    s2 ~> partial.in(1)
-    s3 ~> partial.in(2)
-    partial.out ~> subscriber
+    publisher1 ~> partial.in(0)
+    publisher2 ~> partial.in(1)
+    publisher3 ~> partial.in(2)
+    partial.out ~> sink
     ClosedShape
   })
   graph.run()
+
+  system.terminate()
 }
