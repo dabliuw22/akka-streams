@@ -13,7 +13,9 @@ import scala.language.postfixOps
 
 object Main extends App {
   implicit val system = ActorSystem("system")
+
   import system.dispatcher
+
   implicit val materializer = ActorMaterializer()
 
   val source: Source[Int, NotUsed] = Source(1 to 100)
@@ -21,10 +23,10 @@ object Main extends App {
     Thread.sleep(2000)
     println(i)
   }
-  val sinkTwo: Sink[String, Future[Done]] = Sink foreach[String](println)
+  val sinkTwo: Sink[String, Future[Done]] = Sink foreach[String] (println)
   val sinkThree: Sink[Int, Future[Int]] = Sink.reduce[Int] { (a, b) => a + b }
   val flow = Flow[Int] map { i => i + 1 }
-  val flowTwo = Flow[Int] map { i =>  s"-$i" }
+  val flowTwo = Flow[Int] map { i => s"-$i" }
   val graph = source.to(sinkThree)
   val result = source.runWith(sinkThree)
   /*result.onComplete {

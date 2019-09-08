@@ -21,22 +21,27 @@ object ComplexMainGraph extends App {
   val partialGraph = GraphDSL.create() { implicit build =>
     import GraphDSL.Implicits._
     // compare z1.in0 and z1.in1
-    val z1 = build.add(ZipWith[Int, Int, Int] { max })
+    val z1 = build.add(ZipWith[Int, Int, Int] {
+      max
+    })
     // compare z2.in0(z1.out) and z2.in1
-    val z2 = build.add(ZipWith[Int, Int, Int] { max })
+    val z2 = build.add(ZipWith[Int, Int, Int] {
+      max
+    })
     z1.out ~> z2.in0
     UniformFanInShape(z2.out, z1.in0, z1.in1, z2.in1)
   }
 
-  val graph = RunnableGraph.fromGraph(GraphDSL.create(subscriber) { implicit build => sink =>
-    import GraphDSL.Implicits._
-    // use partialGraph
-    val partial = build.add(partialGraph)
-    publisher1 ~> partial.in(0)
-    publisher2 ~> partial.in(1)
-    publisher3 ~> partial.in(2)
-    partial.out ~> sink
-    ClosedShape
+  val graph = RunnableGraph.fromGraph(GraphDSL.create(subscriber) { implicit build =>
+    sink =>
+      import GraphDSL.Implicits._
+      // use partialGraph
+      val partial = build.add(partialGraph)
+      publisher1 ~> partial.in(0)
+      publisher2 ~> partial.in(1)
+      publisher3 ~> partial.in(2)
+      partial.out ~> sink
+      ClosedShape
   })
   graph.run()
 

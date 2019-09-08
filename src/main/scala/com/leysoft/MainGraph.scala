@@ -49,26 +49,28 @@ object MainGraph extends App {
         in ~> broadcast
         broadcast.out(0) ~> f1.async ~> zip.in0
         broadcast.out(1) ~> f2.async ~> zip.in1
-        zip.out ~>  f3.async ~> out
+        zip.out ~> f3.async ~> out
         ClosedShape
       })
+
   val g = graphWithBroadcastAndZip(Source.single(2), Flow[Int].map { i =>
     logger.info(s"${Thread.currentThread().getName}")
     i > 0
-  }, Flow[Int].map {i =>
+  }, Flow[Int].map { i =>
     logger.info(s"${Thread.currentThread().getName}");
     i % 2 == 0
   }, Flow[(Boolean, Boolean)].map { t => t._1 && t._2 }, Sink.foreach(i => logger.info(s"$i")))
   //g.run()
 
-  def sourceGraph[A](s1: Source[A, _], s2: Source[A, _]) : Source[A, _] =
+  def sourceGraph[A](s1: Source[A, _], s2: Source[A, _]): Source[A, _] =
     Source.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       val concat = builder.add(Concat[A](2))
       s1.async ~> concat.in(0)
       s2.async ~> concat.in(1)
       SourceShape(concat.out)
-  })
+    })
+
   val s = sourceGraph(Source.single(1), Source.single(2))
   //s.to(Sink.foreach { i => logger.info(s"Data: $i") }).run()
 
@@ -81,7 +83,8 @@ object MainGraph extends App {
       broadcast.out(1) ~> f2 ~> zip.in1
       FlowShape(broadcast.in, zip.out)
     })
-  val f = flowGraph(Flow[Int].map {i => i + 1 }, Flow[Int].map {i => s"N-$i" })
+
+  val f = flowGraph(Flow[Int].map { i => i + 1 }, Flow[Int].map { i => s"N-$i" })
   //Source.single(2).via(f).runWith(Sink.foreach { i => logger.info(s"(${i._1}, ${i._2})") })
 
   def sinkGraph[A](s1: Sink[A, Future[Done]], s2: Sink[A, Future[Done]]): Sink[A, NotUsed] =
@@ -92,6 +95,7 @@ object MainGraph extends App {
       broadcast ~> s2
       SinkShape(broadcast.in)
     })
+
   val sk = sinkGraph(Sink.foreach[Int](i => logger.info(s"1: $i")),
     Sink.foreach[Int](i => logger.info(s"2: $i")))
   //Source.single(55).runWith(sk)

@@ -38,8 +38,11 @@ object ActorMain extends App {
   sourceActor ! 22
 
   case object InitStream
+
   case object AckStream
+
   case object CompleteStream
+
   case class FailureStream(error: Throwable)
 
   class CustomSinkActor extends Actor with ActorLogging {
